@@ -1,0 +1,30 @@
+version: '3'
+services:
+  tiny-bridge-app:
+    build:
+      context: ./
+    ports:
+      - '5000:5000'
+    environment:
+      PORT: 5000
+      DB_NAME: 'tinybridge'
+      DB_USER: 'root'
+      DB_PASSWORD: '12345'
+      DB_HOST: 'mysql'
+      DB_PORT: 3306
+      REDIS_HOST: 'redis'
+      REDIS_PORT: 6379
+    depends_on:
+      - mysql
+      - redis
+
+  mysql:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'tinybridge'
+      MYSQL_ROOT_PASSWORD: '12345'
+      MYSQL_PASSWORD: '12345'
+
+  redis:
+    image: redis:latest
