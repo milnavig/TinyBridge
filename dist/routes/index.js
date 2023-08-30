@@ -9,5 +9,5 @@ const router = express_1.default.Router();
 // route for generating short urls
 router.post('/generate', mainController_1.default.generate);
 // route for short urls
-router.get('/:shortened_url', mainController_1.default.getShortLink);
+router.get('/:short_hash', mainController_1.default.getShortLink);
 exports.default = router;

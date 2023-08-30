@@ -25,33 +25,39 @@ class MainController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const { url } = req.body;
+                // check if URL is valid
                 if (!(0, urlValidator_1.isValidHttpUrl)(url)) {
-                    return next(APIError_1.default.badRequest('Invalid data in the inputs!'));
+                    return next(APIError_1.default.badRequest('Invalid URL!'));
                 }
                 // Creating a SHA-3 hash function (Keccak-256)
                 const hash = crypto_1.default.createHash('sha3-256');
-                // Convert seed buffer to HEX string
-                const seedBuffer = (0, seedGenerator_1.generateSeed)();
-                const seed = seedBuffer.toString('hex');
-                const seededURL = url + seed;
-                // Update hash with url string
-                hash.update(seededURL);
-                // Hash calculation in "hex" format
-                const hashedValue = hash.digest('hex');
-                const shortenedHash = hashedValue.slice(0, 5);
-                console.log(`Input: ${url}`);
-                console.log(`SHA-3 (Keccak-256) Hash: ${hashedValue}`);
-                console.log(`SHA-3 (Keccak-256) Hash Shortened: ${shortenedHash}`);
-                const shortenedUrl = `http://0.0.0.0:${process.env.PORT}/${shortenedHash}`;
-                let foundUrl;
+                let foundUrl; // found shortened URL in DB
+                let shortenedHash; // generated shortened hash
                 do {
+                    // Convert seed buffer to HEX string
+                    const seedBuffer = (0, seedGenerator_1.generateSeed)();
+                    const seed = seedBuffer.toString('hex');
+                    // add seed to the URL for randomization
+                    const seededURL = url + seed;
+                    // Update hash with url string
+                    hash.update(seededURL);
+                    // Hash calculation in "hex" format
+                    const hashedValue = hash.digest('hex');
+                    shortenedHash = hashedValue.slice(0, 5);
+                    console.log(`Input URL: ${url}`);
+                    console.log(`SHA-3 (Keccak-256) Hash: ${hashedValue}`);
+                    console.log(`SHA-3 (Keccak-256) Hash Shortened: ${shortenedHash}`);
+                    // check if generated shortened url already exists in DB
                     foundUrl = yield UrlModel_1.Url.findOne({
                         where: {
                             shortUrl: shortenedHash,
                         },
                     });
                 } while (foundUrl);
-                const createdUrl = yield UrlModel_1.Url.create({
+                // generated shortened URL
+                const shortenedUrl = `http://${process.env.HOST}:${process.env.PORT}/${shortenedHash}`;
+                // save to DB short and full URLs
+                yield UrlModel_1.Url.create({
                     shortUrl: shortenedHash,
                     fullUrl: url,
                 });
@@ -68,11 +74,15 @@ class MainController {
     getShortLink(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const shortenedUrl = req.params.shortened_url;
+                const shortenedUrl = req.params.short_hash; // get short hash from URL
+                // check if shortenedUrl already exists in cache
                 const cachedFullUrl = yield cache_1.default.get(shortenedUrl);
+                // if so, simply redirect
                 if (cachedFullUrl) {
                     return res.redirect(cachedFullUrl);
                 }
+                // if shortenedUrl was not found in cache
+                // search for it in DB
                 const foundUrl = yield UrlModel_1.Url.findOne({
                     where: {
                         shortUrl: shortenedUrl,
@@ -81,7 +91,9 @@ class MainController {
                 if (!foundUrl) {
                     return next(APIError_1.default.notFound("Shortened URL does not exist!"));
                 }
+                // get full url
                 const { dataValues: { fullUrl } } = foundUrl;
+                // save it in cache for future use
                 yield cache_1.default.set(shortenedUrl, fullUrl);
                 return res.redirect(fullUrl);
             }

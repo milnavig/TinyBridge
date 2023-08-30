@@ -65,7 +65,8 @@ describe('generate', () => {
 });
 
 describe('getShortLink', () => {
-  const mockRequest = () => ({ params: { shortened_url: 'short123' } } as unknown as Request);
+  const shortUrl = 'short123';
+  const mockRequest = () => ({ params: { short_hash: shortUrl } } as unknown as Request);
   const mockResponse = () => ({ redirect: jest.fn() } as unknown as Response);
   const mockNext = jest.fn() as NextFunction;
 
@@ -83,26 +84,27 @@ describe('getShortLink', () => {
 
     await controller.getShortLink(req, res, mockNext);
 
-    expect(redisClient.get).toHaveBeenCalledWith('short123');
+    expect(redisClient.get).toHaveBeenCalledWith(shortUrl);
     expect(res.redirect).toHaveBeenCalledWith(cachedFullUrl);
     expect(mockNext).not.toHaveBeenCalled();
   });
 
   it('should redirect to found full URL', async () => {
+    const url = 'http://example.com';
     const req = mockRequest();
     const res = mockResponse();
     jest.mocked(redisClient.get).mockResolvedValue(null);
 
-    const foundUrl = { dataValues: { fullUrl: 'http://example.com' } };
+    const foundUrl = { dataValues: { fullUrl: url } };
     jest.mocked(Url.findOne).mockResolvedValue(foundUrl as Model);
 
     await controller.getShortLink(req, res, mockNext);
 
     expect(Url.findOne).toHaveBeenCalledWith({
-      where: { shortUrl: 'short123' },
+      where: { shortUrl },
     });
-    expect(res.redirect).toHaveBeenCalledWith('http://example.com');
-    expect(redisClient.set).toHaveBeenCalledWith('short123', 'http://example.com');
+    expect(res.redirect).toHaveBeenCalledWith(url);
+    expect(redisClient.set).toHaveBeenCalledWith(shortUrl, url);
     expect(mockNext).not.toHaveBeenCalled();
   });
 
