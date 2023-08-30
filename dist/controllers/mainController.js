@@ -33,9 +33,7 @@ class MainController {
                 // Convert seed buffer to HEX string
                 const seedBuffer = (0, seedGenerator_1.generateSeed)();
                 const seed = seedBuffer.toString('hex');
-                console.log(`Generated Seed: ${seed}`);
                 const seededURL = url + seed;
-                console.log(seededURL);
                 // Update hash with url string
                 hash.update(seededURL);
                 // Hash calculation in "hex" format
@@ -57,7 +55,6 @@ class MainController {
                     shortUrl: shortenedHash,
                     fullUrl: url,
                 });
-                console.log(createdUrl);
                 res.status(201).json({ shortURL: shortenedUrl });
             }
             catch (error) {
@@ -71,11 +68,8 @@ class MainController {
     getShortLink(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log(`Got ${req.params.shortened_url}`);
                 const shortenedUrl = req.params.shortened_url;
                 const cachedFullUrl = yield cache_1.default.get(shortenedUrl);
-                console.log('Res:');
-                console.log(cachedFullUrl);
                 if (cachedFullUrl) {
                     return res.redirect(cachedFullUrl);
                 }
@@ -88,7 +82,6 @@ class MainController {
                     return next(APIError_1.default.notFound("Shortened URL does not exist!"));
                 }
                 const { dataValues: { fullUrl } } = foundUrl;
-                console.log(fullUrl);
                 yield cache_1.default.set(shortenedUrl, fullUrl);
                 return res.redirect(fullUrl);
             }

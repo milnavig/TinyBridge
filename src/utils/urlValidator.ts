@@ -1,4 +1,4 @@
-export function isValidHttpUrl(str: string) {
+export function isValidHttpUrl(str: string): boolean {
   let url: URL;
   
   try {

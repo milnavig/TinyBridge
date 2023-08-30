@@ -24,10 +24,7 @@ class MainController {
       const seedBuffer = generateSeed();
       const seed = seedBuffer.toString('hex');
 
-      console.log(`Generated Seed: ${seed}`);
-
       const seededURL = url + seed;
-      console.log(seededURL);
 
       // Update hash with url string
       hash.update(seededURL);
@@ -52,12 +49,10 @@ class MainController {
         });
       } while (foundUrl);
 
-      const createdUrl = await Url.create({
+      await Url.create({
         shortUrl: shortenedHash,
         fullUrl: url,
       });
-
-      console.log(createdUrl)
 
       res.status(201).json({ shortURL: shortenedUrl });
     } catch (error) {
@@ -70,19 +65,17 @@ class MainController {
 
   async getShortLink(req: Request, res: Response, next: NextFunction) {
     try {
-      console.log(`Got ${req.params.shortened_url}`);
       const shortenedUrl = req.params.shortened_url;
 
       const cachedFullUrl = await redisClient.get(shortenedUrl);
-      console.log('Res:')
-      console.log(cachedFullUrl)
+
       if (cachedFullUrl) {
         return res.redirect(cachedFullUrl);
       }
 
       const foundUrl = await Url.findOne({
         where: {
-        shortUrl: shortenedUrl,
+          shortUrl: shortenedUrl,
         },
       });
 
@@ -91,7 +84,6 @@ class MainController {
       }
 
       const { dataValues: { fullUrl } } = foundUrl;
-      console.log(fullUrl)
 
       await redisClient.set(shortenedUrl, fullUrl);
 
